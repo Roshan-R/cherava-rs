@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    info!("Connected to port {} ", port);
+    info!("Connected to port {}  ", port);
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
