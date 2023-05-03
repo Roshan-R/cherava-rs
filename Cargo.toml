@@ -1,5 +1,5 @@
 [package]
-name = "actix-example"
+name = "cherava-rs"
 version = "0.1.0"
 edition = "2021"
 
