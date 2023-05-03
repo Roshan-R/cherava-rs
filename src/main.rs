@@ -6,6 +6,8 @@ mod api;
 mod models;
 mod repository;
 
+use log::info;
+
 #[derive(Serialize)]
 pub struct Response {
     pub message: String,
@@ -36,6 +38,9 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
 
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    info!("Connected to port {} ", port);
+
     HttpServer::new(move || {
         let cors = Cors::permissive();
         App::new()

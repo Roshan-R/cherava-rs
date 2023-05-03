@@ -366,6 +366,7 @@ dependencies = [
  "diesel",
  "dotenvy",
  "env_logger",
+ "log",
  "scraper",
  "serde",
  "ureq",

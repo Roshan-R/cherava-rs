@@ -12,6 +12,7 @@ chrono = "0.4.24"
 diesel = { version = "2.0.0", features = ["postgres", "r2d2"] }
 dotenvy = "0.15"
 env_logger = "0.10.0"
+log = "0.4.17"
 scraper = "0.16.0"
 serde = { version = "1.0.160", features = ["derive"]}
 ureq = "2.6.2"
