@@ -1,15 +1,11 @@
 use crate::repository::database::Database;
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder};
 
-use crate::api::types::*;
+use crate::handlers::workflow;
+use workflow::types::*;
 
 use scraper::{Html, Selector};
 
-#[get("/hello")]
-pub async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-#[post("/getWorkflows")]
 pub async fn w_by_uid(db: web::Data<Database>, data: web::Json<GetDataReq>) -> impl Responder {
     let workflows = db.get_workflows_by_userid(&data.id.as_str());
     dbg!(&workflows);
@@ -18,15 +14,9 @@ pub async fn w_by_uid(db: web::Data<Database>, data: web::Json<GetDataReq>) -> i
         None => HttpResponse::NotFound().body("Workflow not found"),
     }
 }
-#[post("/scrape")]
-pub async fn scrape(data: web::Json<ScrapeReq>) -> impl Responder {
-    let html = ureq::get(&data.url)
-        .set("Accept-Encoding", "gzip")
-        .call()
-        .unwrap()
-        .into_string()
-        .unwrap();
 
+pub async fn scrape(data: web::Json<ScrapeReq>) -> impl Responder {
+    let html = reqwest::get(&data.url).await.unwrap().text().await.unwrap();
     let document = Html::parse_document(html.as_str());
     let selector = Selector::parse(&data.selector).unwrap();
 
@@ -45,7 +35,6 @@ pub async fn scrape(data: web::Json<ScrapeReq>) -> impl Responder {
     }
 }
 
-#[post("/newWorkflow")]
 pub async fn create_new_workflow(
     db: web::Data<Database>,
     data: web::Json<NewWorkflowReq>,
@@ -67,14 +56,4 @@ pub async fn create_new_workflow(
         None => StatusResp { worked: false },
     };
     HttpResponse::Ok().json(s)
-}
-
-pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/api")
-            .service(w_by_uid)
-            .service(hello)
-            .service(scrape)
-            .service(create_new_workflow),
-    );
 }

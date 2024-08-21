@@ -6,7 +6,7 @@ use workflow::{NewWorkflow, Workflow};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use dotenvy::dotenv;
+use dotenv::dotenv;
 type DBPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 pub struct Database {
