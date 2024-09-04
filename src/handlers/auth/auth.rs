@@ -1,17 +1,21 @@
-use crate::config::MC;
+use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::web;
-use actix_web::web::Redirect;
-use actix_web::Responder;
-use magic_crypt::MagicCryptTrait;
-use serde_json::Value;
+use actix_web::web::{Data, Query, Redirect};
+use actix_web::{HttpMessage, HttpRequest, Responder};
 
+use crate::config::MC;
 use crate::handlers::auth;
+use crate::models::user::User;
+use crate::repository::database::Database;
+
 use auth::types::*;
+use magic_crypt::MagicCryptTrait;
 
 pub async fn auth_callback(
-    req_body: web::Query<AuthCallbackParams>,
+    db: Data<Database>,
+    req_body: Query<AuthCallbackParams>,
     session: Session,
+    request: HttpRequest,
 ) -> impl Responder {
     let url = String::from("https://github.com/login/oauth/access_token");
     let params = AccessTokenParams::new(req_body.code.clone());
@@ -25,23 +29,28 @@ pub async fn auth_callback(
         .await
         .unwrap();
 
-    let token: Value = res.json().await.unwrap();
-    dbg!(&token);
+    let token: AccessToken = res.json().await.unwrap();
+    let encrypted_token = MC.encrypt_str_to_base64(token.access_token.as_str());
 
-    dbg!(session.entries());
+    let mut resp: UserResp = client
+        .get("https://api.github.com/user")
+        .header("Authorization", format!("Bearer {}", token.access_token))
+        .header("User-Agent", "Cherava")
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
 
-    // let encrypted_token = MC.encrypt_str_to_base64(token.access_token);
-    let encrypted_token =
-        MC.encrypt_str_to_base64(token.get("access_token").unwrap().as_str().unwrap());
+    resp.access_token = Some(token.access_token);
+    let user: User = resp.into();
+    dbg!(&user);
+    let user = db.get_or_create_user(user);
 
-    // let res = client .get("https://api.github.com/user") .header("Authorization",
-    // format!("BEARER {}", token.access_token)) .header("User-Agent", "Cherava") .send() .await
-    // .unwrap();
-    //
-    // let data: Value = res.json().await.unwrap(); dbg!(&data);
+    session.insert("user_id", user.user_id).unwrap();
+    session.insert("token", &encrypted_token).unwrap();
 
-    Redirect::to(format!(
-        "http://localhost:8000?access_token={}",
-        encrypted_token
-    ))
+    Identity::login(&request.extensions(), user.user_id.to_string()).unwrap();
+    Redirect::to("http://localhost:8000")
 }

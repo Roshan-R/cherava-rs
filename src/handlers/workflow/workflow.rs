@@ -1,13 +1,13 @@
+use crate::models::user::User;
 use crate::repository::database::Database;
 use actix_web::{web, HttpResponse, Responder};
 
 use crate::handlers::workflow;
+use std::time::{SystemTime, UNIX_EPOCH};
 use workflow::types::*;
 
-use scraper::{Html, Selector};
-
-pub async fn w_by_uid(db: web::Data<Database>, data: web::Json<GetDataReq>) -> impl Responder {
-    let workflows = db.get_workflows_by_userid(&data.id.as_str());
+pub async fn w_by_uid(db: web::Data<Database>, user: User) -> impl Responder {
+    let workflows = db.get_workflows_by_userid(user.user_id);
     dbg!(&workflows);
     match workflows {
         Some(w) => HttpResponse::Ok().json(w),
@@ -15,42 +15,28 @@ pub async fn w_by_uid(db: web::Data<Database>, data: web::Json<GetDataReq>) -> i
     }
 }
 
-pub async fn scrape(data: web::Json<ScrapeReq>) -> impl Responder {
-    let html = reqwest::get(&data.url).await.unwrap().text().await.unwrap();
-    let document = Html::parse_document(html.as_str());
-    let selector = Selector::parse(&data.selector).unwrap();
-
-    let selected: String = match &data.r#type {
-        ScrapeType::Text => document
-            .select(&selector)
-            .flat_map(|el| el.text())
-            .collect(),
-        ScrapeType::Html => document.select(&selector).next().unwrap().html(),
-    };
-
-    if selected.is_empty() {
-        HttpResponse::NotFound().body("Could not scrape")
-    } else {
-        HttpResponse::Ok().json(ScrapeResp { d: selected })
-    }
-}
-
 pub async fn create_new_workflow(
     db: web::Data<Database>,
     data: web::Json<NewWorkflowReq>,
+    user: User,
 ) -> impl Responder {
+    let now = SystemTime::now();
+
+    // Calculate the duration since the Unix epoch
+    let duration_since_epoch = now.duration_since(UNIX_EPOCH).unwrap();
+
+    // Convert the duration to seconds
+    let timestamp: i64 = duration_since_epoch.as_secs().try_into().unwrap();
+
     let workflow = db.create_workflow(
-        data.id.as_str(),
-        data.user.as_str(),
-        data.data.as_str(),
-        data.selector.as_str(),
-        data.cron.as_str(),
-        &data.lastupdated,
-        data.url.as_str(),
-        data.name.as_str(),
-        data.email.as_str(),
+        data.id.to_owned(),
+        user.user_id,
+        data.data.to_owned(),
+        data.selector.to_owned(),
+        data.cron.to_owned(),
+        timestamp,
+        data.url.to_owned(),
     );
-    dbg!(&workflow);
     let s = match workflow {
         Some(_w) => StatusResp { worked: true },
         None => StatusResp { worked: false },

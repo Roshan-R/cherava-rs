@@ -11,6 +11,7 @@ pub struct Config {
     #[serde(default = "default_port")]
     pub port: u16,
     pub redirect_uri: String,
+    pub database_url: String,
 }
 
 fn default_port() -> u16 {

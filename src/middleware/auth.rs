@@ -1,6 +1,10 @@
 use crate::config::MC;
+use crate::repository::database::Database;
+use actix_session::SessionExt;
 use actix_web::body::EitherBody;
+use actix_web::web;
 use actix_web::{HttpRequest, HttpResponse};
+use core::panic;
 use futures_util::FutureExt;
 use magic_crypt::MagicCryptTrait;
 use std::future::{ready, Ready};
@@ -34,7 +38,6 @@ where
         }))
     }
 }
-
 pub struct AuthMiddleware<S> {
     service: Rc<S>,
 }
@@ -52,6 +55,11 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        let db = match req.app_data::<web::Data<Database>>() {
+            Some(db) => db.clone(),
+            None => panic!("kevin malone"),
+        };
+
         let (http_req, payload) = req.into_parts();
         let unauthorized_response = |http_request: HttpRequest| {
             ServiceResponse::new(
@@ -62,23 +70,22 @@ where
             )
         };
 
-        let auth_header = match http_req.headers().get("Authorization") {
-            Some(header) => header.to_str().ok(),
+        let session = http_req.get_session();
+
+        let encrypted_token = match session.get::<String>("token").unwrap() {
+            Some(tkn) => tkn,
             None => return Box::pin(async move { Ok(unauthorized_response(http_req)) }),
         };
 
-        // Extract and validate the token
-        let token = match parse_token(auth_header) {
-            Some(token) => token,
-            None => return Box::pin(async move { Ok(unauthorized_response(http_req)) }),
-        };
+        let access_token = MC.decrypt_base64_to_string(&encrypted_token).ok().unwrap();
+
+        // TODO: make this async
+        if db.get_user_from_access_token(access_token).is_none() {
+            return Box::pin(async move { Ok(unauthorized_response(http_req)) });
+        }
 
         let svc = self.service.clone();
-
         async move {
-            if !validate_token(token).await {
-                return Ok(unauthorized_response(http_req));
-            }
             let res = svc
                 .call(ServiceRequest::from_parts(http_req, payload))
                 .await?;
@@ -86,28 +93,4 @@ where
         }
         .boxed_local()
     }
-}
-
-// Function to parse the token from the authorization header
-fn parse_token(auth_header: Option<&str>) -> Option<String> {
-    auth_header.and_then(|header| {
-        if header.starts_with("Bearer ") {
-            let token = &header["Bearer ".len()..];
-            MC.decrypt_base64_to_string(token).ok()
-        } else {
-            None
-        }
-    })
-}
-
-// Function to validate the token with GitHub
-async fn validate_token(token: String) -> bool {
-    let client = reqwest::Client::new();
-    client
-        .get("https://api.github.com")
-        .header("Authorization", format!("Bearer {}", token))
-        .header("User-Agent", "Cherava")
-        .send()
-        .await
-        .map_or(false, |response| response.status().is_success())
 }
