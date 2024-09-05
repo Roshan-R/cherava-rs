@@ -3,7 +3,7 @@ use scraper::{Html, Selector};
 
 use reqwest::Error;
 
-pub async fn scrape(url: String, selector: String) -> Result<String, Error> {
+pub async fn scrape(url: &String, selector: &String) -> Result<String, Error> {
     let client = reqwest::Client::new();
 
     let html = client

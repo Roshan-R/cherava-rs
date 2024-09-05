@@ -21,6 +21,8 @@ magic-crypt = "3.1.13"
 mail-send = "0.4.9"
 reqwest = { version = "0.12.5", features = ["blocking", "json"] }
 scraper = "0.16.0"
+sentry = "0.34.0"
 serde = { version = "1.0.160", features = ["derive"]}
 serde_json = "1.0.125"
+tokio = "1.40.0"
 tokio-cron-scheduler = "0.11.0"

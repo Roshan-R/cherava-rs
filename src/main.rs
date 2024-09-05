@@ -15,14 +15,30 @@ use dotenv::dotenv;
 use server::server;
 use tokio_cron_scheduler::JobScheduler;
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
+fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
+    let _guard = sentry::init((
+        std::env::var("SENTRY_DSN").unwrap(),
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        },
+    ));
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async { startup().await })?;
+    Ok(())
+}
 
+async fn startup() -> Result<(), std::io::Error> {
     let db = Database::new();
 
     let sched = JobScheduler::new().await.unwrap();
-    schedule_workflows(&sched, db.clone()).await.unwrap();
+    schedule_workflows(&sched, db.clone())
+        .await
+        .expect("Error in creating a cron schedules");
     sched.start().await.unwrap();
 
     server(db).await

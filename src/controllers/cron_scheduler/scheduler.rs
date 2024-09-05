@@ -20,9 +20,7 @@ pub async fn schedule_workflows(
             Box::pin({
                 let db = db.clone();
                 async move {
-                    let data = scrape(w.url.to_owned(), w.selector.to_owned())
-                        .await
-                        .unwrap();
+                    let data = scrape(&w.url, &w.selector).await.unwrap();
                     if data != w.data {
                         w.data = data;
                         db.update_workflow(&w).unwrap();
