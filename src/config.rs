@@ -14,6 +14,7 @@ pub struct Config {
     pub sentry_dsn: String,
     pub smtp_username: String,
     pub smtp_password: String,
+    pub smtp_hostname: String,
 }
 
 fn default_port() -> u16 {

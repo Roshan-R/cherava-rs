@@ -1,3 +1,4 @@
+use log::info;
 use reqwest::header::USER_AGENT;
 use scraper::{Html, Selector};
 
@@ -16,6 +17,8 @@ pub async fn scrape(url: &String, selector: &String) -> Result<String, Error> {
         .await?
         .text()
         .await?;
+
+    info!("Scaping site {} with selector {}", url, selector);
     let document = Html::parse_document(html.as_str());
     let selector = Selector::parse(selector.as_str()).unwrap();
 

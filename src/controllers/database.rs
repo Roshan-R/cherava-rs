@@ -2,6 +2,7 @@ use crate::config::CONFIG;
 use crate::models::{user, workflow};
 use crate::repository::schema;
 
+use log::info;
 use user::User;
 use workflow::Workflow;
 
@@ -96,6 +97,8 @@ impl Database {
     }
 
     pub fn update_workflow(&self, w: &Workflow) -> Result<(), diesel::result::Error> {
+        info!("Updating workflow {} ", w.id);
+
         use schema::workflows::dsl::*;
         diesel::update(workflows.filter(id.eq(w.id.clone())))
             .set(data.eq(w.data.clone()))
