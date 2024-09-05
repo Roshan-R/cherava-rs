@@ -8,7 +8,7 @@ use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer};
 
 use crate::config::CONFIG;
-use crate::repository::database::Database;
+use crate::controllers::database::Database;
 use crate::routes;
 
 use log::info;

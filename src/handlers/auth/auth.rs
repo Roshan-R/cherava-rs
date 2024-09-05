@@ -4,9 +4,9 @@ use actix_web::web::{Data, Query, Redirect};
 use actix_web::{HttpMessage, HttpRequest, Responder};
 
 use crate::config::MC;
+use crate::controllers::database::Database;
 use crate::handlers::auth;
 use crate::models::user::User;
-use crate::repository::database::Database;
 
 use auth::types::*;
 use magic_crypt::MagicCryptTrait;

@@ -1,5 +1,5 @@
+use crate::controllers::database::Database;
 use crate::models::user::User;
-use crate::repository::database::Database;
 use actix_web::{web, HttpResponse, Responder};
 
 use crate::handlers::workflow;

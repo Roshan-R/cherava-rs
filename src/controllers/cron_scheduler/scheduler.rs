@@ -1,6 +1,5 @@
-use crate::{
-    controllers::{email::send::send_workflow_updated_mail, scraper::scrape},
-    repository::database::Database,
+use crate::controllers::{
+    database::Database, email::send::send_workflow_updated_mail, scraper::scrape,
 };
 use log::error;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};

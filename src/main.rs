@@ -7,7 +7,7 @@ mod repository;
 mod routes;
 mod server;
 
-use crate::repository::database::Database;
+use controllers::database::Database;
 
 use controllers::cron_scheduler;
 use cron_scheduler::scheduler::schedule_workflows;

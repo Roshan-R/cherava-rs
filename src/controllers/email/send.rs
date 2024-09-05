@@ -1,5 +1,5 @@
+use crate::controllers::database::Database;
 use crate::models::workflow::Workflow;
-use crate::repository::database::Database;
 use mail_send::mail_builder::MessageBuilder;
 use mail_send::SmtpClientBuilder;
 

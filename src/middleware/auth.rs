@@ -1,5 +1,5 @@
 use crate::config::MC;
-use crate::repository::database::Database;
+use crate::controllers::database::Database;
 use actix_session::SessionExt;
 use actix_web::body::EitherBody;
 use actix_web::web;
