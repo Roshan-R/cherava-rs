@@ -10,6 +10,8 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 
+use diesel::result::Error;
+
 type DBPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[derive(Debug, Clone)]
@@ -87,13 +89,10 @@ impl Database {
         results
     }
 
-    pub fn get_all_workflows(&self) -> Vec<Workflow> {
+    pub fn get_all_workflows(&self) -> Result<Vec<Workflow>, Error> {
         use schema::workflows::dsl::*;
-        let results = workflows
-            .load::<Workflow>(&mut self.pool.get().unwrap())
-            .expect("Could not get all the workflows in the db");
-
-        results
+        let results = workflows.load::<Workflow>(&mut self.pool.get().unwrap())?;
+        Ok(results)
     }
 
     pub fn update_workflow(&self, w: &Workflow) -> Result<(), diesel::result::Error> {

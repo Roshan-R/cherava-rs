@@ -2,13 +2,18 @@ use crate::{
     controllers::{email::send::send_workflow_updated_mail, scraper::scrape},
     repository::database::Database,
 };
+use log::error;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 pub async fn schedule_workflows(
     sched: &JobScheduler,
     db: Database,
 ) -> Result<(), JobSchedulerError> {
-    let workflows = db.get_all_workflows();
+    let workflows = db.get_all_workflows().map_err(|e| {
+        error!("Failed to get workflows from database: {}", e);
+        JobSchedulerError::CantAdd
+    })?;
+
     for workflow in workflows {
         let db = db.clone();
         let job = Job::new_async(workflow.cron.clone().as_str(), move |_uuid, _lock| {
