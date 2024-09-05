@@ -11,11 +11,14 @@ use crate::repository::database::Database;
 
 use controllers::cron_scheduler;
 use cron_scheduler::scheduler::schedule_workflows;
+use dotenv::dotenv;
 use server::server;
 use tokio_cron_scheduler::JobScheduler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     let db = Database::new();
 
     let sched = JobScheduler::new().await.unwrap();

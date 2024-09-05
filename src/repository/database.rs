@@ -59,11 +59,29 @@ impl Database {
             .ok();
     }
 
+    pub fn get_user_from_user_id(&self, id: i32) -> Option<User> {
+        use schema::users::dsl::*;
+        return users
+            .filter(user_id.eq(id))
+            .get_result::<User>(&mut self.pool.get().unwrap())
+            .ok();
+    }
+
     pub fn get_workflows_by_userid(&self, userid: i32) -> Option<Vec<Workflow>> {
         use schema::workflows::dsl::*;
         let results = workflows
             .filter(user_id.eq(userid))
             .load::<Workflow>(&mut self.pool.get().unwrap())
+            .optional()
+            .expect("Error loading workflows");
+        results
+    }
+
+    pub fn get_workflow_by_workflow_id(&self, w_id: String) -> Option<Workflow> {
+        use schema::workflows::dsl::*;
+        let results = workflows
+            .filter(id.eq(w_id))
+            .get_result::<Workflow>(&mut self.pool.get().unwrap())
             .optional()
             .expect("Error loading workflows");
         results
@@ -78,10 +96,10 @@ impl Database {
         results
     }
 
-    pub fn update_workflow(&self, w: Workflow) -> Result<(), diesel::result::Error> {
+    pub fn update_workflow(&self, w: &Workflow) -> Result<(), diesel::result::Error> {
         use schema::workflows::dsl::*;
-        diesel::update(workflows.filter(id.eq(w.id)))
-            .set(data.eq(w.data))
+        diesel::update(workflows.filter(id.eq(w.id.clone())))
+            .set(data.eq(w.data.clone()))
             .execute(&mut self.pool.get().unwrap())?;
         Ok(())
     }
