@@ -79,7 +79,7 @@ impl Database {
         results
     }
 
-    pub fn get_workflow_by_workflow_id(&self, w_id: String) -> Option<Workflow> {
+    pub fn get_workflow_by_workflow_id(&self, w_id: &String) -> Option<Workflow> {
         use schema::workflows::dsl::*;
         let results = workflows
             .filter(id.eq(w_id))

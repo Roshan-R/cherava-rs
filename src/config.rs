@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use lazy_static::lazy_static;
 use magic_crypt::{new_magic_crypt, MagicCrypt256};
 use serde::Deserialize;
@@ -12,6 +11,9 @@ pub struct Config {
     pub port: u16,
     pub redirect_uri: String,
     pub database_url: String,
+    pub sentry_dsn: String,
+    pub smtp_username: String,
+    pub smtp_password: String,
 }
 
 fn default_port() -> u16 {
@@ -30,8 +32,6 @@ lazy_static! {
 
 /// Use envy to inject dotenv and env vars into the Config struct
 fn get_config() -> Config {
-    dotenv().ok();
-
     match envy::from_env::<Config>() {
         Ok(config) => config,
         Err(error) => panic!("Configuration Error: {:#?}", error),

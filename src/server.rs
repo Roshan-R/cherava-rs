@@ -20,7 +20,6 @@ async fn not_found() -> HttpResponse {
 pub async fn server(db: Database) -> std::io::Result<()> {
     let app_data = web::Data::new(db);
 
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let session_secret_key = Key::from(
         "this is a simple session key that I have created? 
             How are you my dude this is the best and worst project I have writter"

@@ -3,6 +3,8 @@ use crate::models::workflow::Workflow;
 use mail_send::mail_builder::MessageBuilder;
 use mail_send::SmtpClientBuilder;
 
+use crate::CONFIG;
+
 pub async fn send_workflow_updated_mail(workflow: &Workflow, db: Database) {
     // Assuming the user already has an associated mail with it
     let user = db.get_user_from_user_id(workflow.user_id).unwrap();
@@ -13,16 +15,18 @@ pub async fn send_workflow_updated_mail(workflow: &Workflow, db: Database) {
     let message = MessageBuilder::new()
         .from(("Cherava", "cherava-bot@outlook.com"))
         .to(vec![(name.as_str(), email.as_str())])
-        .subject("Your Workflow has been changed")
-        .html_body("<h1>Hello, world!</h1>")
-        .text_body("Hello world!");
+        .subject(format!(
+            "Cherava: Content update on workflow - {}",
+            workflow.id
+        ))
+        .text_body(format!(
+            "Your workflow {} had the following update received {}",
+            workflow.id, workflow.data
+        ));
 
     SmtpClientBuilder::new("smtp-mail.outlook.com", 587)
         .implicit_tls(false)
-        .credentials((
-            std::env::var("SMTP_USERNAME").unwrap().as_str(),
-            std::env::var("SMTP_PASSWORD").unwrap().as_str(),
-        ))
+        .credentials((CONFIG.smtp_username.as_str(), CONFIG.smtp_password.as_str()))
         .connect()
         .await
         .unwrap()

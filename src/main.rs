@@ -15,20 +15,20 @@ use dotenv::dotenv;
 use server::server;
 use tokio_cron_scheduler::JobScheduler;
 
+use config::CONFIG;
+
 fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
-    let _guard = sentry::init((
-        std::env::var("SENTRY_DSN").unwrap(),
-        sentry::ClientOptions {
-            release: sentry::release_name!(),
-            ..Default::default()
-        },
-    ));
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(async { startup().await })?;
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    let sentry_options = sentry::ClientOptions {
+        release: sentry::release_name!(),
+        ..Default::default()
+    };
+    let _guard = sentry::init((CONFIG.sentry_dsn.as_str(), sentry_options));
+
+    // Start the actual mail function here
+    actix_web::rt::System::new().block_on(async { startup().await })?;
     Ok(())
 }
 
