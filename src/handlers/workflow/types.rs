@@ -6,24 +6,16 @@ pub struct ScrapeResp {
 }
 
 #[derive(Deserialize)]
-pub struct GetDataReq {
-    pub id: String,
-}
-
-#[derive(Deserialize)]
 pub struct NewWorkflowReq {
     pub id: String,
-    pub user: String,
     pub data: String,
     pub selector: String,
-    pub cron: String,
-    pub lastupdated: i64,
     pub url: String,
-    pub name: String,
-    pub email: String,
+    pub cron: String,
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ScrapeType {
     Text,
     Html,
@@ -33,7 +25,12 @@ pub enum ScrapeType {
 pub struct ScrapeReq {
     pub url: String,
     pub selector: String,
+    #[serde(default = "default_type")]
     pub r#type: ScrapeType,
+}
+
+fn default_type() -> ScrapeType {
+    ScrapeType::Text
 }
 
 #[derive(Serialize)]

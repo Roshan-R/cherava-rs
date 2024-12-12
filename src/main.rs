@@ -1,57 +1,45 @@
-use actix_cors::Cors;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use serde::Serialize;
-
-mod api;
+mod config;
+mod controllers;
+mod handlers;
+mod middleware;
 mod models;
 mod repository;
+mod routes;
+mod server;
 
-use log::info;
+use controllers::database::Database;
 
-#[derive(Serialize)]
-pub struct Response {
-    pub message: String,
-}
+use controllers::cron_scheduler;
+use cron_scheduler::scheduler::schedule_workflows;
+use dotenv::dotenv;
+use server::server;
+use tokio_cron_scheduler::JobScheduler;
 
-#[get("/health")]
-async fn healthcheck() -> impl Responder {
-    let response = Response {
-        message: "Everything is working fine".to_string(),
-    };
-    HttpResponse::Ok().json(response)
-}
+use config::CONFIG;
 
-async fn not_found() -> HttpResponse {
-    let response = Response {
-        message: "Resource not found".to_string(),
-    };
-    HttpResponse::NotFound().json(response)
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let workflow_db = repository::database::Database::new();
-    let app_data = web::Data::new(workflow_db);
-    let port: u16 = std::env::var("PORT")
-        .unwrap_or("8080".to_string())
-        .parse()
-        .unwrap();
-
+fn main() -> Result<(), std::io::Error> {
+    dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    info!("Connected to port {}  ", port);
+    let sentry_options = sentry::ClientOptions {
+        release: sentry::release_name!(),
+        ..Default::default()
+    };
+    let _guard = sentry::init((CONFIG.sentry_dsn.as_str(), sentry_options));
 
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        App::new()
-            .wrap(actix_web::middleware::Logger::default())
-            .app_data(app_data.clone())
-            .configure(api::api::config)
-            .service(healthcheck)
-            .default_service(web::route().to(not_found))
-            .wrap(cors)
-    })
-    .bind(("127.0.0.1", port))?
-    .run()
-    .await
+    // Start the actual mail function here
+    actix_web::rt::System::new().block_on(async { startup().await })?;
+    Ok(())
+}
+
+async fn startup() -> Result<(), std::io::Error> {
+    let db = Database::new();
+
+    let sched = JobScheduler::new().await.unwrap();
+    schedule_workflows(&sched, db.clone())
+        .await
+        .expect("Error in creating a cron schedules");
+    sched.start().await.unwrap();
+
+    server(db).await
 }
