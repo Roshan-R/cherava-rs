@@ -1,7 +1,6 @@
 CREATE TABLE Workflows (
     ID          VARCHAR(255) PRIMARY KEY,
     user_id     INT NOT NULL,
-    name        VARCHAR(255) NOT NULL,
     data        VARCHAR(255) NOT NULL,
     selector    VARCHAR(255) NOT NULL,
     cron        VARCHAR(255) NOT NULL,
