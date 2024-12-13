@@ -6,6 +6,7 @@ use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use std::env;
 
 use crate::config::CONFIG;
 use crate::controllers::database::Database;
@@ -26,7 +27,12 @@ pub async fn server(db: Database) -> std::io::Result<()> {
             .as_bytes(),
     );
 
-    info!("Connected to port {} ", CONFIG.port);
+    let port: u16 = match env::var("PORT").ok() {
+        Some(port) => port.parse::<u16>().unwrap(),
+        None => CONFIG.port,
+    };
+
+    info!("Connected to port {} ", port);
     HttpServer::new(move || {
         App::new()
             .wrap(IdentityMiddleware::default())
@@ -49,7 +55,7 @@ pub async fn server(db: Database) -> std::io::Result<()> {
             .default_service(web::route().to(not_found))
             .wrap(Cors::permissive())
     })
-    .bind(("127.0.0.1", CONFIG.port))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
