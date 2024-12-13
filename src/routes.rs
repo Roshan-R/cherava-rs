@@ -15,7 +15,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                     .route("/login", web::post().to(login))
                     .route("/logout", web::post().to(logout)),
             )
-            .route("/health", web::post().to(health::healthcheck))
+            .route("/health", web::get().to(health::healthcheck))
             .route("/scrape", web::post().to(handle_scrape))
             .service(web::scope("/auth").route("/callback", web::get().to(auth_callback)))
             .service(
